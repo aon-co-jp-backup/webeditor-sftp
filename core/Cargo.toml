@@ -17,8 +17,9 @@ serde_json = "1"
 sonic-rs = "0.3"
 
 # SFTP鍵管理: 鍵ペア生成・OSセキュアストレージ・SFTP接続
-russh = "0.45"
-russh-keys = "0.45"
+russh = { version = "0.63", default-features = false, features = ["ring", "rsa"] }
+# 鍵生成の乱数(russh 0.63のssh-keyが要求するrand 0.10系)
+rand_ssh = { package = "rand", version = "0.10" }
 russh-sftp = "2"
 rand = "0.8"
 base64 = "0.22"

@@ -6,7 +6,7 @@
 use std::sync::{Arc, Mutex};
 
 use russh::client::{self, Handle};
-use russh_keys::key::{KeyPair, PublicKey};
+use russh::keys::{HashAlg, PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
 use russh_sftp::client::SftpSession;
 
 use super::known_hosts::{self, TrustOutcome};
@@ -21,12 +21,16 @@ struct TofuHostKeyVerifier {
     outcome: Arc<Mutex<Option<TrustOutcome>>>,
 }
 
-#[async_trait::async_trait]
 impl client::Handler for TofuHostKeyVerifier {
     type Error = russh::Error;
 
-    async fn check_server_key(&mut self, server_public_key: &PublicKey) -> Result<bool, Self::Error> {
-        let fingerprint = server_public_key.fingerprint();
+    async fn check_server_key(&mut self, server_public_key: &PublicKeyOrCertificate) -> Result<bool, Self::Error> {
+        let PublicKeyOrCertificate::PublicKey { key, .. } = server_public_key else {
+            return Ok(false);
+        };
+        // 既存のknown_hostsとの互換のため、旧版と同じ「SHA256:」接頭辞なしの形式で照合する。
+        let fingerprint = key.fingerprint(HashAlg::Sha256).to_string();
+        let fingerprint = fingerprint.strip_prefix("SHA256:").unwrap_or(&fingerprint).to_string();
         match known_hosts::verify_or_trust(&self.host, self.port, &fingerprint) {
             Ok(outcome) => {
                 *self.outcome.lock().unwrap() = Some(outcome);
@@ -58,7 +62,7 @@ async fn connect_and_authenticate(
     host: &str,
     port: u16,
     username: &str,
-    key_pair: KeyPair,
+    key_pair: PrivateKey,
 ) -> Result<(Handle<TofuHostKeyVerifier>, TrustOutcome), SftpError> {
     let outcome_slot: Arc<Mutex<Option<TrustOutcome>>> = Arc::new(Mutex::new(None));
     let handler = TofuHostKeyVerifier {
@@ -82,9 +86,10 @@ async fn connect_and_authenticate(
 
     let mut session = session;
     let authenticated = session
-        .authenticate_publickey(username, Arc::new(key_pair))
+        .authenticate_publickey(username, PrivateKeyWithHashAlg::new(Arc::new(key_pair), Some(HashAlg::Sha512)))
         .await
-        .map_err(|e| SftpError::Connection(e.to_string()))?;
+        .map_err(|e| SftpError::Connection(e.to_string()))?
+        .success();
     if !authenticated {
         return Err(SftpError::Connection(
             "公開鍵認証に失敗しました(サーバー側にauthorized_keysが未登録の可能性)".into(),
@@ -102,7 +107,7 @@ pub async fn upload_file(
     host: &str,
     port: u16,
     username: &str,
-    key_pair: KeyPair,
+    key_pair: PrivateKey,
     remote_path: &str,
     content: &[u8],
     exec_after_upload: Option<&str>,
@@ -158,7 +163,7 @@ pub async fn append_authorized_key(
     host: &str,
     port: u16,
     username: &str,
-    key_pair: KeyPair,
+    key_pair: PrivateKey,
     public_key_line: &str,
 ) -> Result<UploadResult, SftpError> {
     let (session, host_key_trust) =
