@@ -3979,19 +3979,30 @@ dependencies = [
 [[package]]
 name = "rsa"
 version = "0.10.0-rc.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30b2aa4ba0d89f73d1e332df05be0eeab8840351c36ca5654341dfdb57bb3caf"
+source = "git+https://github.com/aon-co-jp/rsa-rs?tag=v0.1.0#1a2be1ad902055d3321c26a1a9acd6df00485219"
 dependencies = [
  "const-oid",
  "crypto-bigint",
- "crypto-primes",
  "digest 0.11.3",
  "pkcs1",
  "pkcs8",
  "rand_core 0.10.1",
+ "rsa-rs-core",
  "sha2 0.11.1",
  "signature",
  "spki",
+ "zeroize",
+]
+
+[[package]]
+name = "rsa-rs-core"
+version = "0.1.0"
+source = "git+https://github.com/aon-co-jp/rsa-rs?tag=v0.1.0#1a2be1ad902055d3321c26a1a9acd6df00485219"
+dependencies = [
+ "crypto-bigint",
+ "crypto-primes",
+ "getrandom 0.3.4",
+ "rand_core 0.10.1",
  "zeroize",
 ]
 
@@ -5217,7 +5228,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
