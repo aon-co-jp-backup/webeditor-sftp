@@ -24,9 +24,13 @@ pub fn store_private_key(label: &str, private_key_pem: &str) -> Result<(), SftpE
 
 /// 秘密鍵をOSセキュアストレージから読み出す。
 pub fn load_private_key(label: &str) -> Result<String, SftpError> {
-    entry(label)?
-        .get_password()
-        .map_err(|e| SftpError::KeyStore(e.to_string()))
+    entry(label)?.get_password().map_err(|e| match e {
+        keyring::Error::NoEntry => SftpError::KeyStore(format!(
+            "鍵ラベル「{label}」の秘密鍵がこの端末のセキュアストレージに見つかりません\
+             (別の端末で生成した鍵は、この端末では使えません。鍵ペアを生成し直してください)"
+        )),
+        other => SftpError::KeyStore(other.to_string()),
+    })
 }
 
 /// 秘密鍵をOSセキュアストレージから削除する。

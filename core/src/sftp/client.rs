@@ -19,6 +19,9 @@ struct TofuHostKeyVerifier {
     /// 照合結果を戻り値(bool)でしか返せないため、詳細(初回信頼か既知か)
     /// を呼び出し元へ伝えるためにここへ書き込む。
     outcome: Arc<Mutex<Option<TrustOutcome>>>,
+    /// ホスト鍵を拒否した理由(記録済みと今回のフィンガープリント等)。russhは
+    /// 拒否時に「Unknown server key」としか返さないため、詳細を呼び出し元へ伝える。
+    rejection: Arc<Mutex<Option<String>>>,
 }
 
 impl client::Handler for TofuHostKeyVerifier {
@@ -36,8 +39,9 @@ impl client::Handler for TofuHostKeyVerifier {
                 *self.outcome.lock().unwrap() = Some(outcome);
                 Ok(true)
             }
-            Err(_) => {
-                // 不一致(なりすましの疑い)。接続を拒否する。
+            Err(e) => {
+                // 不一致(なりすましの疑い)。接続を拒否し、理由を保存する。
+                *self.rejection.lock().unwrap() = Some(e.to_string());
                 Ok(false)
             }
         }
@@ -65,19 +69,25 @@ async fn connect_and_authenticate(
     key_pair: PrivateKey,
 ) -> Result<(Handle<TofuHostKeyVerifier>, TrustOutcome), SftpError> {
     let outcome_slot: Arc<Mutex<Option<TrustOutcome>>> = Arc::new(Mutex::new(None));
+    let rejection_slot: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
     let handler = TofuHostKeyVerifier {
         host: host.to_string(),
         port,
         outcome: outcome_slot.clone(),
+        rejection: rejection_slot.clone(),
     };
 
     let config = Arc::new(client::Config::default());
     let session = client::connect(config, (host, port), handler)
         .await
-        .map_err(|e| SftpError::Connection(format!(
-            "接続に失敗しました({e})。ホスト鍵が記録済みのものと一致しない場合はTOFU検証で\
-             拒否されている可能性があります(意図した鍵変更ならknown_hosts.jsonの該当行を削除してください)。"
-        )))?;
+        .map_err(|e| {
+            // TOFU検証で拒否された場合は、その詳細な理由(記録済み/今回の
+            // フィンガープリントと対処法)をそのまま返す。
+            if let Some(reason) = rejection_slot.lock().unwrap().take() {
+                return SftpError::Connection(reason);
+            }
+            SftpError::Connection(format!("接続に失敗しました({e})"))
+        })?;
 
     let outcome = outcome_slot
         .lock()
@@ -252,7 +262,9 @@ async fn run_command(
             Some(ChannelMsg::ExitStatus { exit_status: status }) => {
                 exit_status = Some(status);
             }
-            Some(ChannelMsg::Eof) | Some(ChannelMsg::Close) | None => break,
+            // 終了コード(ExitStatus)はEofの後・Closeの前に届くことが多いため、
+            // Eofでは打ち切らずCloseまで待つ(実sshdでの通し試験で発覚、2026-11-07)。
+            Some(ChannelMsg::Close) | None => break,
             _ => {}
         }
     }
