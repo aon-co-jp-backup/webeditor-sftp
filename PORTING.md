@@ -662,3 +662,20 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+- **2026-11-07 実SSH/SFTPサーバーへの通し試験を完了(ユーザー指示「未確認は確認して」)**:
+  `scripts/e2e-sftp.mjs`(Windows標準OpenSSHのsshd.exeを一般権限で高ポート起動、実プロセスのwebeditor-sidecarで検証、
+  `cargo build -p webeditor-sidecar && node scripts/e2e-sftp.mjs`)で**9件全成功**: 初回TOFU/2回目既知/後続コマンドの標準出力と
+  終了コード(0・7)/未登録鍵の認証失敗/存在しない鍵ラベル/接続先なし/authorized_keys追記(既存保持)と重複スキップ/
+  ホスト鍵差し替え(なりすまし)の拒否と再信頼手順。後始末で~/.ssh/authorized_keysはバイト単位復元(md5一致を確認)。
+  **発覚・修正した不具合**: (1)exit_statusが常にnull(Eofで打ち切っていた→Closeまで待つ) (2)TOFU拒否理由がrusshの
+  "Unknown server key"に潰れていた(理由を保持して表示) (3)存在しない鍵ラベルが英語の生メッセージ(日本語化)。
+  russh 0.63更新後も`cargo test --workspace`(9件)・`cargo clippy`は通ることを確認。
+
+  **未了・次回再開ポイント(上限到達で未着手)**:
+  1. VSCode拡張のコマンド動作確認: GUIはclick tier固定で不可のため、`@vscode/test-electron`で導入済みVSCodeに対し
+     `vscode.commands.executeCommand`で5コマンドを自動試験する(editor/titleアイコン非表示の原因調査もここで)。
+  2. ブログモードの双方向編集(Webview→元ファイル書き戻し)、QRペアリングのVSCode移植、VSIX化+sidecar同梱。
+  3. 変換対象の拡張(リンク・画像・番号付きリスト・コードブロック・引用・表)とラウンドトリップ試験。
+  4. Android: Android SDK/NDKはPCに導入済みだが未着手。keyringにAndroid用バックエンドが無いため鍵保管の別実装が必要。
+  5. F:\runo\README.md索引のwebeditor-sftp行の更新(現状: sidecar/VSCode拡張雛形/実sshd通し試験まで)。
