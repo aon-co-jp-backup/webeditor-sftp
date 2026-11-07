@@ -8,7 +8,9 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -33,12 +35,41 @@
       {
         "command": "webeditorSftp.uploadCurrentFile",
         "title": "webeditor-sftp: 現在のファイルをSFTPでアップロード"
+      },
+      {
+        "command": "webeditorSftp.openBlogEditor",
+        "title": "webeditor-sftp: ブログモードで編集(HTMLへ書き戻し)",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "webeditorSftp.deleteKeypair",
+        "title": "webeditor-sftp: SFTP鍵ペアを削除"
+      },
+      {
+        "command": "webeditorSftp.showPairingQr",
+        "title": "webeditor-sftp: 公開鍵のペアリングQRを表示"
+      },
+      {
+        "command": "webeditorSftp.appendAuthorizedKey",
+        "title": "webeditor-sftp: 公開鍵をサーバーのauthorized_keysへ追記"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "webeditorSftp.openBlogPreview",
+          "group": "navigation",
+          "when": "resourceLangId == html"
+        },
+        {
+          "command": "webeditorSftp.openBlogEditor",
+          "group": "navigation",
+          "when": "resourceLangId == html"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "webeditorSftp.openBlogEditor",
           "group": "navigation",
           "when": "resourceLangId == html"
         }
@@ -57,11 +88,18 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.4.0"
-  }
+    "typescript": "^5.4.0",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^3.0.0",
+    "@types/mocha": "^10.0.0",
+    "mocha": "^10.0.0"
+  },
+  "license": "MIT"
 }

@@ -679,3 +679,7 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
   3. 変換対象の拡張(リンク・画像・番号付きリスト・コードブロック・引用・表)とラウンドトリップ試験。
   4. Android: Android SDK/NDKはPCに導入済みだが未着手。keyringにAndroid用バックエンドが無いため鍵保管の別実装が必要。
   5. F:\runo\README.md索引のwebeditor-sftp行の更新(現状: sidecar/VSCode拡張雛形/実sshd通し試験まで)。
+
+## 2026-11-08 VS Code拡張の自動試験・変換器の書き直し / VS Code extension tests, converter rewrite
+- **日本語**: `core/src/editor`を書き直し(見出し・箇条書き・引用・コード・表・リンク・画像・太字/斜体、HTML→ブログは簡易DOMで任意HTMLに耐える)。`cargo test -p webeditor-core` 18/18成功。VS Code拡張に`openBlogEditor`(HTMLへ書き戻し)・`deleteKeypair`・`showPairingQr`・`appendAuthorizedKey`を追加し、`@vscode/test-electron`で実VS Codeに対する自動試験6件が成功(`npm test`)。**落とし穴**: VS Codeのパスに空白があると試験が起動しない→空白なしのジャンクション(`C:\Users\noruk\vsc-link`)を作り`VSCODE_EXE`で指定。**未了**: VSIX化(`vsce package`)、Android(keyringにAndroid用バックエンドが無く代替の保管先が必要)、実カメラQR、iOS/macOS。VS CodeのGUI操作(エディタータイトルのアイコン表示)は未確認。
+- **English**: Rewrote the Rust converter (`cargo test -p webeditor-core`: 18/18). Added commands to the extension and 6 automated tests against the real VS Code via `@vscode/test-electron` (all pass; set `VSCODE_EXE` to a path without spaces, e.g. a junction). Open: VSIX packaging, Android secure storage (no keyring backend), real camera QR, iOS/macOS, GUI check of the editor-title icon.
