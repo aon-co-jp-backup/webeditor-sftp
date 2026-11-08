@@ -582,7 +582,7 @@ fn cell_text(children: &[Node]) -> String {
     tidy(&render_inline(&kids)).replace('\n', " ")
 }
 
-fn collect_rows<'a>(nodes: &'a [Node], rows: &mut Vec<Vec<String>>) {
+fn collect_rows(nodes: &[Node], rows: &mut Vec<Vec<String>>) {
     for n in nodes {
         if let Node::Elem { name, children, .. } = n {
             if name == "tr" {
