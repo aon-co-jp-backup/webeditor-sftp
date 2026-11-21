@@ -22,7 +22,7 @@ russh = { version = "0.63", default-features = false, features = ["ring", "rsa"]
 rand_ssh = { package = "rand", version = "0.10" }
 russh-sftp = "2"
 rand = "0.8"
-base64 = "0.22"
+base64 = "0.23"
 thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util"] }
 
