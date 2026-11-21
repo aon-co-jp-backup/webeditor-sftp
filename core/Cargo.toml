@@ -31,7 +31,7 @@ qrcode = "0.14"
 image = { version = "0.25", default-features = false, features = ["png"] }
 
 async-trait = "0.1"
-dirs = "5"
+dirs = "7"
 
 # keyringクレート3.x系はプラットフォームごとの実バックエンドを明示的な
 # featureで有効化しないと、実際には何も永続化しない「無音の失敗」に
