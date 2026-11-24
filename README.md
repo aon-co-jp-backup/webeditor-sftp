@@ -1,3 +1,5 @@
+> Latest translations / 翻訳の最新版: [0-LATEST-TRANSLATIONS.md](0-LATEST-TRANSLATIONS.md)
+
 # webeditor-sftp
 
 ブログ感覚でホームページ/WEBサイトの文章を読み書きできるエディターと、
